@@ -52,13 +52,13 @@ class SpectatorDConan(ConanFile):
         os.unlink(zip_name)
 
     @staticmethod
-    def get_netflix_spectator_cppconf():
-        if os.environ.get("NFLX_INTERNAL") != "ON":
+    def get_netflix_spectator_cppconf(nflx_internal, nflx_source_host):
+        if nflx_internal != "ON":
             return
         dir_name = "netflix_spectator_cppconf"
         commit = "d44c6513f52fba019181e8c59c4c306bd6451b8d"
         zip_name = f"netflix_spectator_cppconf-{commit}.zip"
-        download(f"https://stash.corp.netflix.com/rest/api/latest/projects/CLDMTA/repos/netflix-spectator-cppconf/archive?at={commit}&format=zip", zip_name)
+        download(f"https://{nflx_source_host}/cldmta-netflix-spectator-cppconf/archive/{commit}.zip", zip_name)
         check_sha256(zip_name, "87cafb9306c2cd96477aea2d26ef311ff0b4342a3fa57fd29432411ce355cf6a")
         unzip(zip_name, destination=dir_name)
         shutil.move(f"{dir_name}/netflix_config.cc", "spectator")
@@ -66,13 +66,13 @@ class SpectatorDConan(ConanFile):
         shutil.rmtree(dir_name)
 
     @staticmethod
-    def get_spectatord_metatron():
-        if os.environ.get("NFLX_INTERNAL") != "ON":
+    def get_spectatord_metatron(nflx_internal, nflx_source_host):
+        if nflx_internal != "ON":
             return
         dir_name = "spectatord_metatron"
         commit = "07f0cbcf2d606561d636a1e22931aa8d23bcb7a3"
         zip_name = f"spectatord_metatron-{commit}.zip"
-        download(f"https://stash.corp.netflix.com/rest/api/latest/projects/CLDMTA/repos/spectatord-metatron/archive?at={commit}&format=zip", zip_name)
+        download(f"https://{nflx_source_host}/cldmta-spectatord-metatron/archive/{commit}.zip", zip_name)
         check_sha256(zip_name, "a367d20d62d1ec57622fa325268e7be67b99e58b36ea22dd2e71eba2af853a6c")
         unzip(zip_name, destination=dir_name)
         shutil.move(f"{dir_name}/metatron/auth_context.proto", "metatron")
@@ -81,6 +81,12 @@ class SpectatorDConan(ConanFile):
         shutil.rmtree(dir_name)
 
     def source(self):
+        nflx_internal = os.environ.get("NFLX_INTERNAL")
+        nflx_source_host = os.environ.get("NFLX_SOURCE_HOST")
+
+        if nflx_internal == "ON" and nflx_source_host is None:
+            raise ValueError("NFLX_SOURCE_HOST must be set when NFLX_INTERNAL is ON")
+
         self.get_flat_hash_map()
-        self.get_netflix_spectator_cppconf()
-        self.get_spectatord_metatron()
+        self.get_netflix_spectator_cppconf(nflx_internal, nflx_source_host)
+        self.get_spectatord_metatron(nflx_internal, nflx_source_host)
